@@ -639,7 +639,7 @@ func NewDefault() Configuration {
 		UseGzip:                    true,
 		UseGeoIP:                   true,
 		UseGeoIP2:                  false,
-		WorkerProcesses:            strconv.Itoa(runtime.NumCPU()),
+		WorkerProcesses:            strconv.Itoa(defaultWorkerProcesses()),
 		WorkerShutdownTimeout:      "10s",
 		VariablesHashBucketSize:    128,
 		VariablesHashMaxSize:       2048,
@@ -726,6 +726,7 @@ type TemplateConfig struct {
 	PublishService             *apiv1.Service
 	DynamicCertificatesEnabled bool
 	EnableMetrics              bool
+	DynamicServersEnabled bool
 }
 
 // ListenPorts describe the ports required to run the
@@ -737,4 +738,16 @@ type ListenPorts struct {
 	Health   int
 	Default  int
 	SSLProxy int
+}
+
+// defaultWorkerProcesses return the default nginx
+// worker process number
+func defaultWorkerProcesses() int {
+	cores := runtime.NumCPU()
+	if cores <= 8 {
+		return cores
+	} else if cores <= 16 {
+		return 8
+	}
+	return 16
 }

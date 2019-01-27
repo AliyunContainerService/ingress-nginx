@@ -34,7 +34,7 @@ import (
 	"text/template"
 	"time"
 
-	proxyproto "github.com/armon/go-proxyproto"
+	"github.com/armon/go-proxyproto"
 	"github.com/eapache/channels"
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -527,7 +527,7 @@ func (n *NGINXController) OnUpdate(ingressCfg ingress.Configuration) error {
 		if err != nil {
 			wp = 1
 		}
-		maxOpenFiles := (sysctlFSFileMax() / wp) - 1024
+		maxOpenFiles := sysctlFSFileMax()
 		klog.V(3).Infof("Maximum number of open file descriptors: %d", maxOpenFiles)
 		if maxOpenFiles < 1024 {
 			// this means the value of RLIMIT_NOFILE is too low.
@@ -607,6 +607,7 @@ func (n *NGINXController) OnUpdate(ingressCfg ingress.Configuration) error {
 		PublishService:             n.GetPublishService(),
 		DynamicCertificatesEnabled: n.cfg.DynamicCertificatesEnabled,
 		EnableMetrics:              n.cfg.EnableMetrics,
+		DynamicServersEnabled:      n.cfg.DynamicServersEnabled,
 	}
 
 	tc.Cfg.Checksum = ingressCfg.ConfigurationChecksum
@@ -767,12 +768,18 @@ func (n *NGINXController) IsDynamicConfigurationEnough(pcfg *ingress.Configurati
 		clearCertificates(&copyOfPcfg)
 	}
 
+	if n.cfg.DynamicServersEnabled {
+		copyOfRunningConfig.Servers = []*ingress.Server{}
+		copyOfPcfg.Servers = []*ingress.Server{}
+	}
+
 	return copyOfRunningConfig.Equal(&copyOfPcfg)
 }
 
 // configureDynamically encodes new Backends in JSON format and POSTs the
 // payload to an internal HTTP endpoint handled by Lua.
-func configureDynamically(pcfg *ingress.Configuration, port int, isDynamicCertificatesEnabled bool) error {
+func configureDynamically(pcfg *ingress.Configuration, port int, isDynamicCertificatesEnabled bool,
+	isDynamicServersEnabled bool) error {
 	backends := make([]*ingress.Backend, len(pcfg.Backends))
 
 	for i, backend := range pcfg.Backends {
@@ -861,6 +868,13 @@ func configureDynamically(pcfg *ingress.Configuration, port int, isDynamicCertif
 		}
 	}
 
+	if isDynamicServersEnabled {
+		err = configureServers(pcfg, port)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -899,6 +913,39 @@ func configureCertificates(pcfg *ingress.Configuration, port int) error {
 			SSLCert: ingress.SSLCert{
 				PemCertKey: server.SSLCert.PemCertKey,
 			},
+		})
+	}
+
+	url := fmt.Sprintf("http://localhost:%d/configuration/certs", port)
+	return post(url, servers)
+}
+
+func configureServers(pcfg *ingress.Configuration, port int) error {
+	var servers []*ingress.Server
+
+	for _, server := range pcfg.Servers {
+
+		var locations []*ingress.Location
+		for _, location := range server.Locations {
+			luaBackend := ingress.LuaBackend{}
+			if location.Ingress != nil {
+				luaBackend.Namespace = location.Ingress.Namespace
+				luaBackend.IngressName = location.Ingress.Name
+				luaBackend.ServiceName, luaBackend.ServicePort = splitUpstreamName(
+					location.Backend, luaBackend.Namespace)
+			}
+
+			locations = append(locations, &ingress.Location{
+				Path:       location.Path,
+				Backend:    location.Backend,
+				LuaBackend: luaBackend,
+			})
+		}
+
+		servers = append(servers, &ingress.Server{
+			Hostname:  server.Hostname,
+			Locations: locations,
+			Alias:     server.Alias,
 		})
 	}
 

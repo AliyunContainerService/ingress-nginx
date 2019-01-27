@@ -155,6 +155,13 @@ build:
 	GOBUILD_FLAGS="$(GOBUILD_FLAGS)" \
 	build/go-in-docker.sh build/build.sh
 
+.PHONY: local-build
+local-build:
+	@echo "+ Building bin/$(ARCH)/nginx-ingress-controller"
+	@$(DEF_VARS) \
+	GOBUILD_FLAGS="$(GOBUILD_FLAGS)" \
+	build/build.sh
+
 .PHONY: clean
 clean:
 	rm -rf bin/ .gocache/ .env

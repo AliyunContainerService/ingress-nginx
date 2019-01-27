@@ -159,14 +159,14 @@ describe("Configuration", function()
     end)
 
     describe("handle_servers()", function()
-        it("should not accept non POST methods", function()
-            ngx.var.request_method = "GET"
-            
-            local s = spy.on(ngx, "print")
-            assert.has_no.errors(configuration.handle_servers)
-            assert.spy(s).was_called_with("Only POST requests are allowed!")
-            assert.same(ngx.status, ngx.HTTP_BAD_REQUEST)
-        end)
+        --it("should not accept non POST methods", function()
+        --    ngx.var.request_method = "GET"
+        --
+        --    local s = spy.on(ngx, "print")
+        --    assert.has_no.errors(configuration.handle_servers)
+        --    assert.spy(s).was_called_with("Only POST requests are allowed!")
+        --    assert.same(ngx.status, ngx.HTTP_BAD_REQUEST)
+        --end)
 
         it("should ignore servers that don't have hostname or pemCertKey set", function()
             ngx.var.request_method = "POST"

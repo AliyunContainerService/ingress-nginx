@@ -30,6 +30,9 @@ type canary struct {
 
 // Config returns the configuration rules for setting up the Canary
 type Config struct {
+	ServiceWeightConfig
+	ServiceMatchConfig
+
 	Enabled bool
 	Weight  int
 	Header  string
@@ -46,6 +49,30 @@ func NewParser(r resolver.Resolver) parser.IngressAnnotation {
 func (c canary) Parse(ing *extensions.Ingress) (interface{}, error) {
 	config := &Config{}
 	var err error
+
+	serviceWeight, err := parseServiceWeight(ing)
+	if err != nil {
+		return nil, err
+	}
+
+	if serviceWeight != nil {
+		config.ServiceWeightEnabled = serviceWeight.ServiceWeightEnabled
+		config.ServiceWeightCfgMap = serviceWeight.ServiceWeightCfgMap
+	} else {
+		config.ServiceWeightEnabled = false
+	}
+
+	serviceMatch, err := parseServiceMatch(ing)
+	if err != nil {
+		return nil, err
+	}
+
+	if serviceMatch != nil {
+		config.ServiceMatchEnabled = serviceMatch.ServiceMatchEnabled
+		config.ServiceMatchCfgMap = serviceMatch.ServiceMatchCfgMap
+	} else {
+		config.ServiceMatchEnabled = false
+	}
 
 	config.Enabled, err = parser.GetBoolAnnotation("canary", ing)
 	if err != nil {

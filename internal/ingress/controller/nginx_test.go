@@ -251,7 +251,7 @@ func TestConfigureDynamically(t *testing.T) {
 	port := ts.Listener.Addr().(*net.TCPAddr).Port
 	defer ts.Close()
 
-	err := configureDynamically(commonConfig, port, false)
+	err := configureDynamically(commonConfig, port, false, false)
 	if err != nil {
 		t.Errorf("unexpected error posting dynamic configuration: %v", err)
 	}

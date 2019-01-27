@@ -144,6 +144,10 @@ Requires the update-status parameter.`)
 			`Dynamically update SSL certificates instead of reloading NGINX.
 Feature backed by OpenResty Lua libraries. Requires that OCSP stapling is not enabled`)
 
+		dynamicServersEnabled = flags.Bool("enable-dynamic-servers", false,
+			`Dynamically update servers instead of reloading NGINX.
+Feature backed by OpenResty Lua libraries.`)
+
 		enableMetrics = flags.Bool("enable-metrics", true,
 			`Enables the collection of NGINX metrics`)
 		metricsPerHost = flags.Bool("metrics-per-host", true,
@@ -259,6 +263,7 @@ Feature backed by OpenResty Lua libraries. Requires that OCSP stapling is not en
 			Status:   *statusPort,
 		},
 		DisableCatchAll: *disableCatchAll,
+		DynamicServersEnabled: *dynamicServersEnabled,
 	}
 
 	return false, config, nil

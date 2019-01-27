@@ -37,6 +37,7 @@ import (
 	"k8s.io/ingress-nginx/internal/ingress/annotations/redirect"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/rewrite"
 	"k8s.io/ingress-nginx/internal/ingress/resolver"
+	"k8s.io/ingress-nginx/internal/ingress/annotations/canary"
 )
 
 var (
@@ -120,6 +121,12 @@ type TrafficShapingPolicy struct {
 	Header string `json:"header"`
 	// Cookie on which to redirect requests to this backend
 	Cookie string `json:"cookie"`
+	// ServiceWeight on which to shift traffic to this backend
+	ServiceWeight map[string]int `json:"serviceWeight,omitempty"`
+	// ServiceMatch on which to shift traffic to this backend
+	ServiceMatch map[string]canary.MatchRule `json:"serviceMatch,omitempty"`
+	// HostPath on which http ingress rule path
+	HostPath string `json:"hostPath,omitempty"`
 }
 
 // HashInclude defines if a field should be used or not to calculate the hash
@@ -223,6 +230,8 @@ type Location struct {
 	Ingress *Ingress `json:"ingress"`
 	// Backend describes the name of the backend to use.
 	Backend string `json:"backend"`
+	// LuaBackend describes the details of the backend to use.
+	LuaBackend LuaBackend `json:"luaBackend"`
 	// Service describes the referenced services from the ingress
 	Service *apiv1.Service `json:"service,omitempty"`
 	// Port describes to which port from the service
@@ -358,4 +367,11 @@ type Ingress struct {
 // GeneralConfig holds the definition of lua general configuration data
 type GeneralConfig struct {
 	ControllerPodsCount int `json:"controllerPodsCount"`
+}
+
+type LuaBackend struct {
+	Namespace   string `json:"namespace"`
+	IngressName string `json:"ingressName"`
+	ServiceName string `json:"serviceName"`
+	ServicePort string `json:"servicePort"`
 }

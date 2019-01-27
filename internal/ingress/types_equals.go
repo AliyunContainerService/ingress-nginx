@@ -296,7 +296,24 @@ func (tsp1 TrafficShapingPolicy) Equal(tsp2 TrafficShapingPolicy) bool {
 	if tsp1.Cookie != tsp2.Cookie {
 		return false
 	}
-
+	if len(tsp1.ServiceWeight) != len(tsp2.ServiceWeight) {
+		return false
+	}
+	for service, weight1 := range tsp1.ServiceWeight {
+		if weight2, ok := tsp2.ServiceWeight[service]; !ok || weight1 != weight2 {
+			return false
+		}
+	}
+	if len(tsp1.ServiceMatch) != len(tsp2.ServiceMatch) {
+		return false
+	}
+	for service, match1 := range tsp1.ServiceMatch {
+		match2, ok := tsp2.ServiceMatch[service]
+		if !ok || match1.Ticket != match2.Ticket || match1.Pattern != match2.Pattern ||
+			match1.Key != match2.Key || match1.Value != match2.Value {
+			return false
+		}
+	}
 	return true
 }
 

@@ -30,6 +30,7 @@ import (
 	"k8s.io/kubernetes/pkg/util/sysctl"
 
 	"k8s.io/ingress-nginx/internal/ingress"
+	"strings"
 )
 
 // newUpstream creates an upstream without servers.
@@ -49,6 +50,17 @@ func newUpstream(name string) *ingress.Backend {
 // upstreamName returns a formatted upstream name based on namespace, service, and port
 func upstreamName(namespace string, service string, port intstr.IntOrString) string {
 	return fmt.Sprintf("%v-%v-%v", namespace, service, port.String())
+}
+
+func splitUpstreamName(upstreamName string, namespace string) (string, string) {
+	str := strings.TrimLeft(upstreamName, namespace)
+	idx := strings.LastIndex(str, "-")
+	if idx < 0 {
+		klog.Warningf("Invalid upstream name format: %v", upstreamName)
+		return "", ""
+	}
+
+	return str[1:idx], str[idx+1:]
 }
 
 // sysctlSomaxconn returns the maximum number of connections that can be queued

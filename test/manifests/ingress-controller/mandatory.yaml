@@ -205,7 +205,8 @@ spec:
             privileged: true
       containers:
         - name: nginx-ingress-controller
-          image: ingress-controller/nginx-ingress-controller:dev
+          image: registry.cn-hangzhou.aliyuncs.com/acs/aliyun-ingress-controller:v0.22.0.4
+          imagePullPolicy: Always
           args:
             - /nginx-ingress-controller
             - --configmap=$(POD_NAMESPACE)/nginx-configuration

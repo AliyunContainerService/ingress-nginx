@@ -67,7 +67,8 @@ end
 
 function _M.call()
   if #metrics_batch >= MAX_BATCH_SIZE then
-    ngx.log(ngx.WARN, "omitting metrics for the request, current batch is full")
+    ngx.log(ngx.WARN, "flushing metrics for the request, current batch is full")
+    flush(false)
     return
   end
 

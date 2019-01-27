@@ -114,4 +114,20 @@ local function replace_special_char(str, a, b)
 end
 _M.replace_special_char = replace_special_char
 
+-- check whether is a valid byte size
+local function is_valid_byte_size(size, offset)
+  if not size then
+    return false
+  end
+
+  if offset then
+    local match, err = ngx.re.match(size, "^[0-9]+[kKmMgG]{0,1}$")
+    return match ~= nil
+  end
+
+  local match, err = ngx.re.match(size, "^[0-9]+[kKmM]{0,1}$")
+  return match ~= nil
+end
+_M.is_valid_byte_size = is_valid_byte_size
+
 return _M
