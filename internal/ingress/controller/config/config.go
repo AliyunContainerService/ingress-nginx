@@ -18,6 +18,7 @@ package config
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"k8s.io/klog/v2"
@@ -401,6 +402,19 @@ type Configuration struct {
 	// UseGeoIP2 enables the geoip2 module for NGINX
 	// By default this is disabled
 	UseGeoIP2 bool `json:"use-geoip2,omitempty"`
+
+	// Enables Sentinel module for NGINX
+	// By default this is disabled
+	UseSentinel bool `json:"use-sentinel,omitempty"`
+
+	// Sentinel sentinel_sidecar_run params, e.g. "--app=demo-k8s --ns=k8s"
+	SentinelParams string `json:"sentinel-params,omitempty"`
+
+	// Sentinel sentinel_block_action config
+	SentinelBlockAction string `json:"sentinel-block-action,omitempty"`
+
+	// Sentinel sentinel_error_action config
+	SentinelErrorAction string `json:"sentinel-error-action,omitempty"`
 
 	// Enables or disables the use of the NGINX Brotli Module for compression
 	// https://github.com/google/ngx_brotli
@@ -821,6 +835,7 @@ func NewDefault() Configuration {
 		UseGeoIP:                         true,
 		UseGeoIP2:                        false,
 		WorkerProcesses:                  strconv.Itoa(runtime.NumCPU()),
+		UseSentinel:                      false,
 		WorkerShutdownTimeout:            "240s",
 		VariablesHashBucketSize:          256,
 		VariablesHashMaxSize:             2048,
@@ -895,6 +910,44 @@ func NewDefault() Configuration {
 	}
 
 	return cfg
+}
+
+// check does SentinelParams valid
+func (cfg *Configuration) SentinelParamsValid() (bool, string) {
+	cfg.SentinelParams = strings.TrimSpace(cfg.SentinelParams)
+	params := cfg.SentinelParams
+
+	if len(params) == 0 {
+		// if not given params, use default app name.
+		cfg.SentinelParams += "--app=ingress-sentinel-default"
+		params += "--app=ingress-sentinel-default"
+	}
+
+	hasParam := func(param string) bool {
+		str := params
+		idx := strings.Index(str, param)
+		for idx != -1 {
+			// simple check that `param` is the beginning part of a parameter.
+			if idx == 0 {
+				return true
+			}
+			switch str[idx-1] {
+			case '\t', '\n', '\r', ' ':
+				return true
+			}
+
+			str = str[idx+len(param):]
+			idx = strings.Index(str, param)
+		}
+		return false
+	}
+
+	if !hasParam("--app=") {
+		// if not given app name, use default name.
+		cfg.SentinelParams += " --app=ingress-sentinel-default"
+	}
+
+	return true, ""
 }
 
 // TemplateConfig contains the nginx configuration to render the file nginx.conf

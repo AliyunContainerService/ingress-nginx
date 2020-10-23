@@ -37,6 +37,12 @@ load_module /etc/nginx/modules/ngx_http_modsecurity_module.so;
 load_module /etc/nginx/modules/ngx_http_opentracing_module.so;
 {{ end }}
 
+{{ if $cfg.UseSentinel }}
+load_module /opt/ahas-sentinel-sidecar-linux/lib/k8s-ingress/ngx_sentinel_module.so;
+sentinel_init sidecar unix:/tmp/sentinel-sidecar.sock;
+sentinel_sidecar_run "/opt/ahas-sentinel-sidecar-linux/bin/sentinel-sidecar.sh" {{ $cfg.SentinelParams }};
+{{ end }}
+
 daemon off;
 
 worker_processes {{ $cfg.WorkerProcesses }};
@@ -61,6 +67,15 @@ events {
 }
 
 http {
+    {{ if $cfg.UseSentinel }}
+    {{ if $cfg.SentinelBlockAction }}
+    sentinel_block_action {{ $cfg.SentinelBlockAction }};
+    {{ end }}
+    {{ if $cfg.SentinelErrorAction }}
+    sentinel_error_action {{ $cfg.SentinelErrorAction }};
+    {{ end }}
+    {{ end }}
+
     lua_package_path "/etc/nginx/lua/?.lua;;";
 
     {{ buildLuaSharedDictionaries $cfg $servers }}

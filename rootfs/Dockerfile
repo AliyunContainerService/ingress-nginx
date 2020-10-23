@@ -48,6 +48,18 @@ COPY --chown=www-data:www-data bin/${TARGETARCH}/dbg /
 COPY --chown=www-data:www-data bin/${TARGETARCH}/nginx-ingress-controller /
 COPY --chown=www-data:www-data bin/${TARGETARCH}/wait-shutdown /
 
+# install AHAS sentinel
+RUN apk add bash curl tar openjdk11-jre
+RUN : 2021-03-04 && \
+  curl -L "https://ahasoss-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/sidecar/latest/ahas-sentinel-sidecar-linux-no-jre.tar.gz" \
+    | tar -xz --no-same-owner -C /opt/ --exclude=ahas-sentinel-sidecar-linux/jre && \
+  true
+RUN : 2021-03-04 && \
+  mkdir /opt/ahas-sentinel-sidecar-linux/lib/k8s-ingress/ && \
+  curl -L "https://ahasoss-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/sidecar/latest/k8s-ingress-nginx-1.19.6-aliyun.tar.gz" \
+    | tar -xz --no-same-owner --strip-components=1 -C /opt/ahas-sentinel-sidecar-linux/lib/k8s-ingress/ && \
+  true
+
 # Fix permission during the build to avoid issues at runtime
 # with volumes (custom templates)
 RUN bash -xeu -c ' \
@@ -57,6 +69,8 @@ RUN bash -xeu -c ' \
     /etc/ingress-controller/auth \
     /var/log \
     /var/log/nginx \
+    /opt/ahas-sentinel-sidecar-linux/log \
+    /opt/ahas-sentinel-sidecar-linux/etc/ahas \
   ); \
   for dir in "${writeDirs[@]}"; do \
     mkdir -p ${dir}; \

@@ -886,6 +886,12 @@ func (s *k8sStore) setConfig(cmap *corev1.ConfigMap) {
 		klog.Warning("The GeoIP2 feature is enabled but the databases are missing. Disabling")
 		s.backendConfig.UseGeoIP2 = false
 	}
+	if s.backendConfig.UseSentinel {
+		if ok, msg := s.backendConfig.SentinelParamsValid(); !ok {
+			klog.Warningf("The Sentinel feature is enabled but sentinel-params %s. Disabling.", msg)
+			s.backendConfig.UseSentinel = false
+		}
+	}
 
 	s.writeSSLSessionTicketKey(cmap, "/etc/nginx/tickets.key")
 }
