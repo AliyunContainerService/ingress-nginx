@@ -24,7 +24,7 @@ INIT_BUILDX=$(DIR)/../../hack/init-buildx.sh
 TAG ?= 0.0
 REGISTRY ?= gcr.io/k8s-staging-ingress-nginx
 
-IMAGE = $(REGISTRY)/nginx
+IMAGE ?= $(REGISTRY)/nginx
 
 # required to enable buildx
 export DOCKER_CLI_EXPERIMENTAL=enabled
@@ -39,6 +39,9 @@ build: ensure-buildx
 		--progress=$(PROGRESS) \
 		--pull \
 		--tag $(IMAGE):$(TAG) rootfs
+
+build-nginx:
+	docker build --tag $(IMAGE):$(TAG) rootfs
 
 # push the cross built image
 push: OUTPUT=--push
