@@ -108,6 +108,8 @@ type Configuration struct {
 	MonitorMaxBatchSize int
 
 	ShutdownGracePeriod int
+
+	DynamicServersEnabled bool
 }
 
 // GetPublishService returns the Service used to set the load-balancer status of Ingresses.
@@ -183,7 +185,7 @@ func (n *NGINXController) syncIngress(interface{}) error {
 	}
 
 	err := wait.ExponentialBackoff(retry, func() (bool, error) {
-		err := n.configureDynamically(pcfg)
+		err := n.configureDynamically(pcfg, n.cfg.DynamicServersEnabled)
 		if err == nil {
 			klog.V(2).Infof("Dynamic reconfiguration succeeded.")
 			return true, nil
@@ -506,6 +508,7 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 	servers := n.createServers(ingresses, upstreams, du)
 
 	var canaryIngresses []*ingress.Ingress
+	var releaseIngresses []*ingress.Ingress
 
 	for _, ing := range ingresses {
 		ingKey := k8s.MetaNamespaceKey(ing)
@@ -679,6 +682,14 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 		if anns.Canary.Enabled {
 			canaryIngresses = append(canaryIngresses, ing)
 		}
+
+		if anns.Canary.ServiceWeightEnabled || anns.Canary.ServiceMatchEnabled {
+			releaseIngresses = append(releaseIngresses, ing)
+		}
+	}
+
+	if err := n.mergeReleaseAlternativeBackends(releaseIngresses, upstreams, servers); err != nil {
+		klog.Errorf("Failed to merge alternative backends for release policy")
 	}
 
 	if nonCanaryIngressExists(ingresses, canaryIngresses) {
@@ -816,6 +827,7 @@ func (n *NGINXController) createUpstreams(data []*ingress.Ingress, du *ingress.B
 					HeaderValue:   anns.Canary.HeaderValue,
 					HeaderPattern: anns.Canary.HeaderPattern,
 					Cookie:        anns.Canary.Cookie,
+					HostPath:      fmt.Sprintf("%s%s", ing.Namespace, ing.Name),
 				}
 			}
 
@@ -871,6 +883,8 @@ func (n *NGINXController) createUpstreams(data []*ingress.Ingress, du *ingress.B
 					}
 				}
 
+				hostPath := fmt.Sprintf("%s%s", rule.Host, path.Path)
+
 				// configure traffic shaping for canary
 				if anns.Canary.Enabled {
 					upstreams[name].NoServer = true
@@ -880,8 +894,11 @@ func (n *NGINXController) createUpstreams(data []*ingress.Ingress, du *ingress.B
 						HeaderValue:   anns.Canary.HeaderValue,
 						HeaderPattern: anns.Canary.HeaderPattern,
 						Cookie:        anns.Canary.Cookie,
+						HostPath:      hostPath,
 					}
 				}
+
+				n.configureReleasePolicy(upstreams[name], ing, hostPath)
 
 				if len(upstreams[name].Endpoints) == 0 {
 					endp, err := n.serviceEndpoints(svcKey, path.Backend.ServicePort.String())

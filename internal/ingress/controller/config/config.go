@@ -919,6 +919,7 @@ type TemplateConfig struct {
 	EnableMetrics            bool
 	MaxmindEditionFiles      []string
 	MonitorMaxBatchSize      int
+	DynamicServersEnabled    bool
 
 	PID        string
 	StatusPath string

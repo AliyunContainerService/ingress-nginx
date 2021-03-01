@@ -51,6 +51,18 @@ func upstreamName(namespace string, service string, port intstr.IntOrString) str
 	return fmt.Sprintf("%v-%v-%v", namespace, service, port.String())
 }
 
+// SplitUpstreamName returns service and port based on upstreamName and namespace
+func splitUpstreamName(upstreamName string, namespace string) (string, string) {
+	str := strings.TrimLeft(upstreamName, namespace)
+	idx := strings.LastIndex(str, "-")
+	if idx < 0 {
+		klog.Warningf("Invalid upstream name format: %v", upstreamName)
+		return "", ""
+	}
+
+	return str[1:idx], str[idx+1:]
+}
+
 // sysctlSomaxconn returns the maximum number of connections that can be queued
 // for acceptance (value of net.core.somaxconn)
 // http://nginx.org/en/docs/http/ngx_http_core_module.html#listen

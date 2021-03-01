@@ -546,6 +546,7 @@ http {
     }
     {{ end }}
 
+    {{ if not $all.DynamicServersEnabled }}
     {{/* Build server redirects (from/to www) */}}
     {{ range $redirect := .RedirectServers }}
     ## start server {{ $redirect.From }}
@@ -588,9 +589,11 @@ http {
     }
     ## end server {{ $redirect.From }}
     {{ end }}
+    {{ end }}
 
     {{ range $server := $servers }}
 
+    {{ if not $all.DynamicServersEnabled }}
     ## start server {{ $server.Hostname }}
     server {
         server_name {{ buildServerName $server.Hostname }} {{range $server.Aliases }}{{ . }} {{ end }};
@@ -616,7 +619,35 @@ http {
         {{ template "CUSTOM_ERRORS" (buildCustomErrorDeps "upstream-default-backend" $cfg.CustomHTTPErrors $all.EnableMetrics) }}
     }
     ## end server {{ $server.Hostname }}
+    {{ else }}
+    {{ if eq $server.Hostname "_" }}
+    ## start server {{ $server.Hostname }}
+    server {
+        server_name {{ $server.Hostname }} {{range $server.Aliases }}{{ . }} {{ end }};
 
+        {{ if gt (len $cfg.BlockUserAgents) 0 }}
+        if ($block_ua) {
+           return 403;
+        }
+        {{ end }}
+        {{ if gt (len $cfg.BlockReferers) 0 }}
+        if ($block_ref) {
+           return 403;
+        }
+        {{ end }}
+
+        {{ template "SERVER" serverConfig $all $server }}
+
+        {{ if not (empty $cfg.ServerSnippet) }}
+        # Custom code snippet configured in the configuration configmap
+        {{ $cfg.ServerSnippet }}
+        {{ end }}
+
+        {{ template "CUSTOM_ERRORS" (buildCustomErrorDeps "upstream-default-backend" $cfg.CustomHTTPErrors $all.EnableMetrics) }}
+    }
+    ## end server {{ $server.Hostname }}
+    {{ end }}
+    {{ end }}
     {{ end }}
 
     # backend for when default-backend-service is not configured or it does not have endpoints
@@ -1125,7 +1156,9 @@ stream {
             }
 
             {{ if not $location.Logs.Access }}
+            {{ if not $all.DynamicServersEnabled }}
             access_log off;
+            {{ end }}
             {{ end }}
 
             {{ if $location.Logs.Rewrite }}

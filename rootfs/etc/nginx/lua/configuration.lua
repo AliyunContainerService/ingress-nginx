@@ -17,6 +17,10 @@ local EMPTY_UID = "-1"
 
 local _M = {}
 
+function _M.get_servers_data()
+  return configuration_data:get("vservers")
+end
+
 function _M.get_backends_data()
   return configuration_data:get("backends")
 end
@@ -220,11 +224,41 @@ local function handle_backends()
   ngx.status = ngx.HTTP_CREATED
 end
 
+local function handle_vservers()
+  if ngx.var.request_method == "GET" then
+    ngx.status = ngx.HTTP_OK
+    ngx.print(_M.get_servers_data())
+    return
+  end
+
+  local servers = fetch_request_body()
+  if not servers then
+    ngx.log(ngx.ERR, "dynamic-configuration: unable to read valid request body")
+    ngx.status = ngx.HTTP_BAD_REQUEST
+    return
+  end
+
+  local success, err = configuration_data:set("vservers", servers)
+  if not success then
+    ngx.log(ngx.ERR, "dynamic-configuration: error updating vservers: " .. tostring(err))
+    ngx.status = ngx.HTTP_BAD_REQUEST
+    return
+  end
+
+  ngx.status = ngx.HTTP_CREATED
+end
+
+
 function _M.call()
   if ngx.var.request_method ~= "POST" and ngx.var.request_method ~= "GET" then
     ngx.status = ngx.HTTP_BAD_REQUEST
     ngx.print("Only POST and GET requests are allowed!")
     return
+  end
+
+  if ngx.var.request_uri == "/configuration/vservers" then
+    handle_vservers()
+    return 
   end
 
   if ngx.var.request_uri == "/configuration/servers" then

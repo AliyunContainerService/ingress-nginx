@@ -173,6 +173,8 @@ Takes the form "<host>:port". If not provided, no admission controller is starte
 		statusUpdateInterval = flags.Int("status-update-interval", status.UpdateInterval, "Time interval in seconds in which the status should check if an update is required. Default is 60 seconds")
 
 		shutdownGracePeriod = flags.Int("shutdown-grace-period", 0, "Seconds to wait after receiving the shutdown signal, before stopping the nginx process.")
+
+		dynamicServersEnabled = flags.Bool("enable-dynamic-servers", false, `Dynamically update servers instead of reloading NGINX. Feature backed by OpenResty Lua libraries.`)
 	)
 
 	flags.StringVar(&nginx.MaxmindMirror, "maxmind-mirror", "", `Maxmind mirror url (example: http://geoip.local/databases`)
@@ -297,6 +299,7 @@ https://blog.maxmind.com/2019/12/18/significant-changes-to-accessing-and-using-g
 		ValidationWebhook:         *validationWebhook,
 		ValidationWebhookCertPath: *validationWebhookCert,
 		ValidationWebhookKeyPath:  *validationWebhookKey,
+		DynamicServersEnabled:     *dynamicServersEnabled,
 	}
 
 	if *apiserverHost != "" {

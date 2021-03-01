@@ -25,6 +25,7 @@ import (
 	"k8s.io/ingress-nginx/internal/ingress/annotations/auth"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/authreq"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/authtls"
+	"k8s.io/ingress-nginx/internal/ingress/annotations/canary"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/connection"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/cors"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/fastcgi"
@@ -123,6 +124,13 @@ type TrafficShapingPolicy struct {
 	HeaderPattern string `json:"headerPattern"`
 	// Cookie on which to redirect requests to this backend
 	Cookie string `json:"cookie"`
+
+	// ServiceWeight on which to shift traffic to this backend
+	ServiceWeight map[string]int `json:"serviceWeight,omitempty"`
+	// ServiceMatch on which to shift traffic to this backend
+	ServiceMatch map[string]canary.MatchRule `json:"serviceMatch,omitempty"`
+	// HostPath on which http ingress rule path
+	HostPath string `json:"hostPath,omitempty"`
 }
 
 // HashInclude defines if a field should be used or not to calculate the hash
@@ -244,6 +252,8 @@ type Location struct {
 	IngressPath string `json:"ingressPath"`
 	// Backend describes the name of the backend to use.
 	Backend string `json:"backend"`
+	// LuaBackend describes the details of the backend to use.
+	LuaBackend LuaBackend `json:"luaBackend"`
 	// Service describes the referenced services from the ingress
 	Service *apiv1.Service `json:"-"`
 	// Port describes to which port from the service
@@ -401,4 +411,10 @@ type Ingress struct {
 
 // GeneralConfig holds the definition of lua general configuration data
 type GeneralConfig struct {
+}
+type LuaBackend struct {
+	Namespace   string `json:"namespace"`
+	IngressName string `json:"ingressName"`
+	ServiceName string `json:"serviceName"`
+	ServicePort string `json:"servicePort"`
 }
