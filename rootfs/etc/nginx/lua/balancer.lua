@@ -11,7 +11,7 @@ local sticky_balanced = require("balancer.sticky_balanced")
 local sticky_persistent = require("balancer.sticky_persistent")
 local ewma = require("balancer.ewma")
 local ck = require("resty.cookie")
---local ip_util = require("resty.iputils")
+local ip_util = require("resty.iputils")
 local string = string
 local ipairs = ipairs
 local table = table
@@ -615,15 +615,15 @@ local function handle_server_request()
   end
 
   -- process ip white list configuration --
---  if target_location_object.whitelist then
---   local location_whitelist = target_location_object.whitelist["cidr"] or {}
---    if location_whitelist and #location_whitelist > 0 then
---      local parsed_whitelist = ip_util.parse_cidrs(location_whitelist)
---      if not ip_util.ip_in_cidrs(ngx.var.the_real_ip, parsed_whitelist) then
---        return ngx.exit(ngx.HTTP_FORBIDDEN)
---      end
---    end
---  end
+  if target_location_object.whitelist then
+    local location_whitelist = target_location_object.whitelist["cidr"] or {}
+    if location_whitelist and #location_whitelist > 0 then
+      local parsed_whitelist = ip_util.parse_cidrs(location_whitelist)
+      if not ip_util.ip_in_cidrs(ngx.var.the_real_ip, parsed_whitelist) then
+        return ngx.exit(ngx.HTTP_FORBIDDEN)
+      end
+    end
+  end
 
   -- process redirect configuration --
   if target_location_object.redirect then
@@ -693,6 +693,8 @@ function _M.init_worker()
     ngx.log(ngx.ERR, "error when setting up timer.every for sync_backends_with_external_name: ",
             err)
   end
+
+  ip_util.enable_lrucache() -- initialize ip white list cache
 end
 
 function _M.rewrite()

@@ -39,6 +39,8 @@ RUN apk update \
     diffutils \
   && rm -rf /var/cache/apk/*
 
+COPY iputils.lua /usr/local/lib/lua/resty
+
 COPY --chown=www-data:www-data etc /etc
 COPY --chown=www-data:www-data ingress-controller /ingress-controller
 
