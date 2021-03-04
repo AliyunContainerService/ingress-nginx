@@ -1037,6 +1037,7 @@ func configureCertificates(rawServers []*ingress.Server) error {
 	return nil
 }
 
+// configureServers send POST request to update lua vservers
 func configureServers(pcfg *ingress.Configuration) error {
 	var servers []*ingress.Server
 
