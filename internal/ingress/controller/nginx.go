@@ -871,6 +871,13 @@ func (n *NGINXController) configureDynamically(pcfg *ingress.Configuration, isDy
 		}
 	}
 
+	if isDynamicServersEnabled {
+		err := configureServers(pcfg)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

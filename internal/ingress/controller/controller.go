@@ -688,14 +688,14 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 		}
 	}
 
-	if err := n.mergeReleaseAlternativeBackends(releaseIngresses, upstreams, servers); err != nil {
-		klog.Errorf("Failed to merge alternative backends for release policy")
-	}
-
 	if nonCanaryIngressExists(ingresses, canaryIngresses) {
 		for _, canaryIng := range canaryIngresses {
 			mergeAlternativeBackends(canaryIng, upstreams, servers)
 		}
+	}
+
+	if err := n.mergeReleaseAlternativeBackends(releaseIngresses, upstreams, servers); err != nil {
+		klog.Errorf("Failed to merge alternative backends for release policy")
 	}
 
 	aUpstreams := make([]*ingress.Backend, 0, len(upstreams))
