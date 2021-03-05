@@ -255,7 +255,7 @@ func TestConfigureDynamically(t *testing.T) {
 		cfg:           &Configuration{},
 	}
 
-	err = n.configureDynamically(commonConfig)
+	err = n.configureDynamically(commonConfig, false)
 	if err != nil {
 		t.Errorf("unexpected error posting dynamic configuration: %v", err)
 	}
@@ -265,7 +265,7 @@ func TestConfigureDynamically(t *testing.T) {
 
 	resetEndpointStats()
 	n.runningConfig.Backends = backends
-	err = n.configureDynamically(commonConfig)
+	err = n.configureDynamically(commonConfig, false)
 	if err != nil {
 		t.Errorf("unexpected error posting dynamic configuration: %v", err)
 	}
@@ -279,7 +279,7 @@ func TestConfigureDynamically(t *testing.T) {
 
 	resetEndpointStats()
 	n.runningConfig.Servers = servers
-	err = n.configureDynamically(commonConfig)
+	err = n.configureDynamically(commonConfig, false)
 	if err != nil {
 		t.Errorf("unexpected error posting dynamic configuration: %v", err)
 	}
@@ -291,7 +291,7 @@ func TestConfigureDynamically(t *testing.T) {
 	}
 
 	resetEndpointStats()
-	err = n.configureDynamically(commonConfig)
+	err = n.configureDynamically(commonConfig, false)
 	if err != nil {
 		t.Errorf("unexpected error posting dynamic configuration: %v", err)
 	}
